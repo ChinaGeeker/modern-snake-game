@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="一款视觉惊艳的网页版贪吃蛇游戏，支持用户登录、分数记录和排行榜">
+  <title>🐍 贪吃蛇 — Snake Game</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+  <!-- ====== 动态背景 ====== -->
+  <div class="bg-animation">
+    <div class="bg-orb bg-orb--cyan"></div>
+    <div class="bg-orb bg-orb--fuchsia"></div>
+  </div>
+
+  <!-- ====== 应用容器 ====== -->
+  <div class="app-container">
+
+    <!-- ====== 登录/注册 视图 ====== -->
+    <div id="auth-view">
+      <div class="glass-panel">
+        <!-- 品牌标题 -->
+        <h1 class="gradient-title">🐍 贪吃蛇</h1>
+        <p class="subtitle">经典重现，挑战你的极限</p>
+
+        <!-- 表单标题 -->
+        <h2 class="auth-form-title" id="auth-title">用户登录</h2>
+
+        <!-- 错误提示 -->
+        <div class="auth-error" id="auth-error"></div>
+
+        <!-- 登录/注册表单 -->
+        <form id="auth-form" autocomplete="off">
+          <div class="form-group">
+            <label for="username">用户名</label>
+            <input type="text" id="username" placeholder="请输入用户名" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="password">密码</label>
+            <input type="password" id="password" placeholder="请输入密码" autocomplete="off">
+          </div>
+          <button type="submit" class="btn-neon" id="auth-submit-btn">🚀 登录</button>
+        </form>
+
+        <!-- 模式切换 -->
+        <button class="toggle-link" id="toggle-auth-mode">没有账号？点击注册</button>
+      </div>
+    </div>
+
+    <!-- ====== 游戏 视图 ====== -->
+    <div id="game-view" class="hidden">
+      <div class="glass-panel">
+        <!-- 顶部栏 -->
+        <div class="game-header">
+          <span class="welcome-text">
+            欢迎, <strong id="user-display-name"></strong>
+          </span>
+          <button class="btn-logout" id="logout-btn">退出登录</button>
+        </div>
+
+        <!-- 游戏标题 -->
+        <h1 class="gradient-title" style="font-size: 1.8rem; margin-bottom: 20px;">🐍 贪吃蛇</h1>
+
+        <!-- 分数面板 -->
+        <div class="score-panel">
+          <div class="score-item">
+            <div class="score-label">当前分数</div>
+            <div class="score-value" id="current-score">0</div>
+          </div>
+          <div class="score-item">
+            <div class="score-label">最高记录</div>
+            <div class="score-value high" id="high-score">0</div>
+          </div>
+        </div>
+
+        <!-- 游戏画布 -->
+        <div class="canvas-wrapper">
+          <canvas id="game-canvas"></canvas>
+        </div>
+
+        <!-- 游戏控制按钮 -->
+        <div class="game-controls">
+          <button class="btn-neon" id="start-btn">🎮 开始游戏</button>
+          <button class="btn-neon" id="pause-btn" disabled>⏸️ 暂停</button>
+        </div>
+
+        <!-- 历史记录区域 -->
+        <div class="history-section">
+          <div class="history-title">📊 历史记录</div>
+
+          <!-- 标签页切换 -->
+          <div class="history-tabs">
+            <button class="tab-btn active" data-tab="scores">🏆 游戏分数</button>
+            <button class="tab-btn" data-tab="leaderboard">🌍 全局排行</button>
+            <button class="tab-btn" data-tab="logins">📅 登录时间</button>
+          </div>
+
+          <!-- 分数历史 -->
+          <div class="history-list" id="score-history-list">
+            <div class="empty-history">🎮 暂无游戏记录</div>
+          </div>
+
+          <!-- 全局排行榜 -->
+          <div class="history-list hidden" id="leaderboard-list">
+            <div class="empty-history">🌍 暂无排行数据</div>
+          </div>
+
+          <!-- 登录历史 -->
+          <div class="history-list hidden" id="login-history-list">
+            <div class="empty-history">📅 暂无登录记录</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ====== JavaScript 模块 ====== -->
+  <script src="js/storage.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/app.js"></script>
+</body>
+
+</html>

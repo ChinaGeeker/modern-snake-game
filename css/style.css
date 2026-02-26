@@ -1,0 +1,590 @@
+/* ============================================
+   style.css — 全局样式
+   动态背景、毛玻璃、渐变、霓虹、响应式
+   ============================================ */
+
+/* ---- Google Fonts ---- */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+/* ---- CSS 变量 ---- */
+:root {
+  --bg-primary: #0f172a;
+  --bg-secondary: rgba(15, 23, 42, 0.6);
+  --cyan: #22d3ee;
+  --cyan-dark: #06b6d4;
+  --fuchsia: #d946ef;
+  --fuchsia-dark: #c026d3;
+  --rose: #f43f5e;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --border-color: rgba(148, 163, 184, 0.15);
+  --glass-bg: rgba(15, 23, 42, 0.6);
+  --glass-blur: 12px;
+  --radius: 16px;
+  --transition: 0.3s ease;
+}
+
+/* ---- 重置与基础 ---- */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  min-height: 100vh;
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  overflow-x: hidden;
+}
+
+/* ---- 动态背景 ---- */
+.bg-animation {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.bg-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.4;
+}
+
+/* 青色球体 */
+.bg-orb--cyan {
+  width: 500px;
+  height: 500px;
+  background: var(--cyan);
+  top: -100px;
+  left: -100px;
+  animation: float-cyan 10s ease-in-out infinite;
+}
+
+/* 紫红色球体 */
+.bg-orb--fuchsia {
+  width: 450px;
+  height: 450px;
+  background: var(--fuchsia);
+  bottom: -100px;
+  right: -100px;
+  animation: float-fuchsia 12s ease-in-out infinite;
+}
+
+@keyframes float-cyan {
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  25% {
+    transform: translate(100px, 80px) scale(1.1);
+  }
+
+  50% {
+    transform: translate(60px, 160px) scale(0.95);
+  }
+
+  75% {
+    transform: translate(-40px, 100px) scale(1.05);
+  }
+}
+
+@keyframes float-fuchsia {
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  25% {
+    transform: translate(-80px, -60px) scale(1.05);
+  }
+
+  50% {
+    transform: translate(-120px, -120px) scale(1.1);
+  }
+
+  75% {
+    transform: translate(-40px, -80px) scale(0.95);
+  }
+}
+
+/* ---- 主容器 ---- */
+.app-container {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+/* ---- 毛玻璃面板 ---- */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 40px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* ---- 渐变标题 ---- */
+.gradient-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  text-align: center;
+  background: linear-gradient(135deg, var(--cyan), var(--fuchsia));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 8px;
+  line-height: 1.2;
+}
+
+.subtitle {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin-bottom: 32px;
+  font-weight: 300;
+}
+
+/* ============================================
+   登录/注册 视图
+   ============================================ */
+
+#auth-view .glass-panel {
+  max-width: 420px;
+}
+
+.auth-form-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 24px;
+  color: var(--text-primary);
+}
+
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.form-group input:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.15);
+}
+
+.form-group input::placeholder {
+  color: rgba(148, 163, 184, 0.5);
+}
+
+.auth-error {
+  display: none;
+  background: rgba(244, 63, 94, 0.15);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  color: var(--rose);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+/* ---- 霓虹按钮 ---- */
+.btn-neon {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  color: #fff;
+  background: linear-gradient(135deg, var(--cyan-dark), var(--cyan));
+  box-shadow: 0 0 20px rgba(34, 211, 238, 0.35), 0 0 40px rgba(34, 211, 238, 0.1);
+}
+
+.btn-neon:hover {
+  background: linear-gradient(135deg, #0891b2, var(--cyan-dark));
+  box-shadow: 0 0 30px rgba(34, 211, 238, 0.55), 0 0 60px rgba(34, 211, 238, 0.2);
+  transform: translateY(-1px);
+}
+
+.btn-neon:active {
+  transform: translateY(0);
+}
+
+.toggle-link {
+  display: block;
+  text-align: center;
+  margin-top: 18px;
+  color: var(--cyan);
+  font-size: 0.85rem;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: 'Outfit', sans-serif;
+  transition: color var(--transition);
+}
+
+.toggle-link:hover {
+  color: var(--fuchsia);
+}
+
+/* ============================================
+   游戏 视图
+   ============================================ */
+
+#game-view .glass-panel {
+  max-width: 560px;
+}
+
+/* ---- 顶部栏 ---- */
+.game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.welcome-text {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+.welcome-text strong {
+  color: var(--cyan);
+  font-weight: 600;
+}
+
+.btn-logout {
+  padding: 8px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.btn-logout:hover {
+  border-color: var(--rose);
+  color: var(--rose);
+  box-shadow: 0 0 12px rgba(244, 63, 94, 0.2);
+}
+
+/* ---- 游戏画布 ---- */
+.canvas-wrapper {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.canvas-wrapper::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 20px);
+  max-width: 406px;
+  height: calc(100% + 6px);
+  border-radius: 6px;
+  background: linear-gradient(135deg, var(--cyan), var(--fuchsia));
+  z-index: -1;
+}
+
+#game-canvas {
+  display: block;
+  border-radius: 4px;
+  box-shadow:
+    0 0 30px rgba(34, 211, 238, 0.15),
+    0 0 60px rgba(217, 70, 239, 0.08);
+}
+
+/* ---- 分数与控制 ---- */
+.game-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.game-controls .btn-neon {
+  flex: 1;
+  padding: 12px;
+  font-size: 0.9rem;
+}
+
+.game-controls .btn-neon:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.score-panel {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-bottom: 28px;
+}
+
+.score-item {
+  text-align: center;
+}
+
+.score-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.score-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--cyan);
+}
+
+.score-value.high {
+  color: var(--fuchsia);
+}
+
+/* ---- 历史记录 ---- */
+.history-section {
+  border-top: 1px solid var(--border-color);
+  padding-top: 20px;
+}
+
+.history-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.history-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.tab-btn.active {
+  background: rgba(34, 211, 238, 0.1);
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+.tab-btn:hover:not(.active) {
+  border-color: rgba(148, 163, 184, 0.3);
+  color: var(--text-primary);
+}
+
+.history-list {
+  max-height: 180px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--cyan-dark) transparent;
+}
+
+.history-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.history-list::-webkit-scrollbar-thumb {
+  background: var(--cyan-dark);
+  border-radius: 2px;
+}
+
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.5);
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+  border: 1px solid rgba(148, 163, 184, 0.06);
+}
+
+.history-item:hover {
+  background: rgba(34, 211, 238, 0.05);
+}
+
+.history-rank {
+  font-weight: 600;
+  color: var(--cyan);
+  min-width: 24px;
+}
+
+.history-score-val {
+  font-weight: 600;
+  color: var(--fuchsia);
+}
+
+.history-date {
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+}
+
+.history-time {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+.empty-history {
+  text-align: center;
+  padding: 24px;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+/* ---- 全局排行榜 ---- */
+.leaderboard-medal {
+  font-size: 1.1rem;
+  min-width: 30px;
+  text-align: center;
+}
+
+.leaderboard-name {
+  flex: 1;
+  font-weight: 500;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leaderboard-name.is-me {
+  color: var(--cyan);
+  font-weight: 700;
+}
+
+.leaderboard-me {
+  background: rgba(34, 211, 238, 0.08) !important;
+  border-color: rgba(34, 211, 238, 0.2) !important;
+}
+
+.leaderboard-top {
+  background: rgba(250, 204, 21, 0.05) !important;
+}
+
+.history-item .leaderboard-medal {
+  color: var(--text-secondary);
+}
+
+.leaderboard-top .leaderboard-medal {
+  filter: none;
+}
+
+/* ---- 隐藏元素 ---- */
+.hidden {
+  display: none !important;
+}
+
+/* ---- 响应式 ---- */
+@media (max-width: 600px) {
+  .glass-panel {
+    padding: 24px 20px;
+  }
+
+  .gradient-title {
+    font-size: 2rem;
+  }
+
+  #game-canvas {
+    width: 320px !important;
+    height: 320px !important;
+  }
+
+  .canvas-wrapper::before {
+    max-width: 326px;
+  }
+
+  .score-panel {
+    gap: 24px;
+  }
+
+  .score-value {
+    font-size: 1.4rem;
+  }
+}
+
+@media (max-width: 380px) {
+  #game-canvas {
+    width: 280px !important;
+    height: 280px !important;
+  }
+
+  .canvas-wrapper::before {
+    max-width: 286px;
+  }
+
+  .glass-panel {
+    padding: 20px 16px;
+  }
+}

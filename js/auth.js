@@ -34,7 +34,7 @@ const Auth = (() => {
     /**
      * 处理登录/注册逻辑
      */
-    async function handleAuth() {
+    function handleAuth() {
         const username = document.getElementById('username').value.trim();
         const password = document.getElementById('password').value.trim();
         const errorEl = document.getElementById('auth-error');
@@ -62,7 +62,7 @@ const Auth = (() => {
         try {
             if (isLoginMode) {
                 // 登录
-                const isValid = await window.Storage.validateUser(username, password);
+                const isValid = window.Storage.validateUser(username, password);
                 if (isValid) {
                     window.Storage.addLoginRecord(username);
                     window.Storage.setCurrentUser(username);
@@ -72,7 +72,7 @@ const Auth = (() => {
                 }
             } else {
                 // 注册
-                const isRegistered = await window.Storage.saveUser(username, password);
+                const isRegistered = window.Storage.saveUser(username, password);
                 if (isRegistered) {
                     window.Storage.addLoginRecord(username);
                     window.Storage.setCurrentUser(username);

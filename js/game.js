@@ -22,7 +22,6 @@ const Game = (() => {
     let currentUser = null;
     let gridCache = null;       // 网格缓存
     let soundEnabled = true;    // 音效开关
-    let sounds = {};            // 音效对象
     let difficulty = 'normal';  // 游戏难度
 
     // ---- 颜色主题 ----
@@ -40,39 +39,72 @@ const Game = (() => {
     // ---- 渐变色动画时间偏移（让颜色随时间流动）----
     let colorOffset = 0;
 
-    /**
-     * 加载音效
-     */
-    function loadSounds() {
-        // 音效对象
-        sounds = {
-            eat: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-jump-coin-216.mp3'),
-            gameOver: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-failure-arcade-alert-notification-240.mp3'),
-            start: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-game-start-216.mp3'),
-            move: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-jump-coin-216.mp3')
-        };
+    // Web Audio API 上下文
+    let audioContext = null;
 
-        // 预加载音效
-        Object.values(sounds).forEach(sound => {
-            sound.volume = 0.3;
-            sound.preload = 'auto';
-        });
+    /**
+     * 初始化 Web Audio API
+     */
+    function initAudioContext() {
+        try {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) {
+            console.log('Web Audio API 初始化失败:', e);
+        }
     }
 
     /**
-     * 播放音效
-     * @param {string} soundName - 音效名称
+     * 使用 Web Audio API 播放音效
+     * @param {string} type - 音效类型
      */
-    function playSound(soundName) {
-        if (soundEnabled && sounds[soundName]) {
-            sounds[soundName].currentTime = 0;
-            sounds[soundName].play().catch(e => console.log('音效播放失败:', e));
+    function playSound(type) {
+        if (!soundEnabled || !audioContext) return;
+
+        try {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            switch (type) {
+                case 'start':
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(880, audioContext.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.1);
+                    break;
+                case 'eat':
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(440, audioContext.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.1);
+                    break;
+                case 'gameOver':
+                    oscillator.type = 'sawtooth';
+                    oscillator.frequency.setValueAtTime(220, audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(110, audioContext.currentTime + 0.3);
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.3);
+                    break;
+            }
+        } catch (e) {
+            console.log('音效播放失败:', e);
         }
     }
 
     // 触摸控制相关变量
     let touchStartX = 0;
     let touchStartY = 0;
+    let touchDirection = null; // 当前触摸按下的方向
 
     /**
      * 处理触摸开始事件
@@ -80,9 +112,38 @@ const Game = (() => {
      */
     function handleTouchStart(e) {
         e.preventDefault(); // 阻止默认滚动行为
+        if (gameState !== 'playing') return;
+        
         const touch = e.touches[0];
         touchStartX = touch.clientX;
         touchStartY = touch.clientY;
+        
+        // 计算触摸位置相对于画布中心的方向
+        const rect = canvas.getBoundingClientRect();
+        const x = touch.clientX - rect.left - rect.width / 2;
+        const y = touch.clientY - rect.top - rect.height / 2;
+        
+        // 根据触摸位置确定方向
+        if (Math.abs(x) > Math.abs(y)) {
+            // 水平方向
+            if (x > 0) {
+                touchDirection = { x: 1, y: 0 };
+            } else {
+                touchDirection = { x: -1, y: 0 };
+            }
+        } else {
+            // 垂直方向
+            if (y > 0) {
+                touchDirection = { x: 0, y: 1 };
+            } else {
+                touchDirection = { x: 0, y: -1 };
+            }
+        }
+        
+        // 应用方向
+        if (touchDirection) {
+            nextDirection = { ...touchDirection };
+        }
     }
 
     /**
@@ -91,30 +152,44 @@ const Game = (() => {
      */
     function handleTouchEnd(e) {
         e.preventDefault(); // 阻止默认滚动行为
+        touchDirection = null;
+    }
+    
+    /**
+     * 处理触摸移动事件
+     * @param {TouchEvent} e - 触摸事件
+     */
+    function handleTouchMove(e) {
+        e.preventDefault(); // 阻止默认滚动行为
         if (gameState !== 'playing') return;
-
-        const touch = e.changedTouches[0];
-        const touchEndX = touch.clientX;
-        const touchEndY = touch.clientY;
-
-        const deltaX = touchEndX - touchStartX;
-        const deltaY = touchEndY - touchStartY;
-
-        // 确定滑动方向
-        if (Math.abs(deltaX) > Math.abs(deltaY)) {
-            // 水平滑动
-            if (deltaX > 0 && direction.x !== -1) {
-                nextDirection = { x: 1, y: 0 }; // 向右
-            } else if (deltaX < 0 && direction.x !== 1) {
-                nextDirection = { x: -1, y: 0 }; // 向左
+        
+        const touch = e.touches[0];
+        
+        // 计算触摸位置相对于画布中心的方向
+        const rect = canvas.getBoundingClientRect();
+        const x = touch.clientX - rect.left - rect.width / 2;
+        const y = touch.clientY - rect.top - rect.height / 2;
+        
+        // 根据触摸位置确定方向
+        if (Math.abs(x) > Math.abs(y)) {
+            // 水平方向
+            if (x > 0 && direction.x !== -1) {
+                touchDirection = { x: 1, y: 0 };
+            } else if (x < 0 && direction.x !== 1) {
+                touchDirection = { x: -1, y: 0 };
             }
         } else {
-            // 垂直滑动
-            if (deltaY > 0 && direction.y !== -1) {
-                nextDirection = { x: 0, y: 1 }; // 向下
-            } else if (deltaY < 0 && direction.y !== 1) {
-                nextDirection = { x: 0, y: -1 }; // 向上
+            // 垂直方向
+            if (y > 0 && direction.y !== -1) {
+                touchDirection = { x: 0, y: 1 };
+            } else if (y < 0 && direction.y !== 1) {
+                touchDirection = { x: 0, y: -1 };
             }
+        }
+        
+        // 应用方向
+        if (touchDirection) {
+            nextDirection = { ...touchDirection };
         }
     }
 
@@ -177,14 +252,15 @@ const Game = (() => {
         canvas.width = CANVAS_SIZE;
         canvas.height = CANVAS_SIZE;
 
-        // 加载音效
-        loadSounds();
+        // 初始化 Web Audio API
+        initAudioContext();
 
         // 绑定键盘事件
         document.addEventListener('keydown', handleKeyDown);
 
         // 绑定触摸事件
         canvas.addEventListener('touchstart', handleTouchStart);
+        canvas.addEventListener('touchmove', handleTouchMove);
         canvas.addEventListener('touchend', handleTouchEnd);
 
         // 绑定按钮事件

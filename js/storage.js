@@ -29,30 +29,32 @@ function saveAllData(data) {
 }
 
 /**
- * 生成密码的安全哈希
- * @param {string} password - 原始密码
- * @returns {Promise<string>} 哈希后的密码
+ * 生成密码的哈希
+ * @param {string} str - 原始字符串
+ * @returns {string} 哈希后的字符串
  */
-async function hashPassword(password) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+function hashPassword(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return hash.toString(36);
 }
 
 /**
  * 保存新用户
  * @param {string} username - 用户名
  * @param {string} password - 密码
- * @returns {Promise<boolean>} 是否注册成功
+ * @returns {boolean} 是否注册成功
  */
-async function saveUser(username, password) {
+function saveUser(username, password) {
   const data = getAllData();
   if (data.users[username]) {
     return false; // 用户已存在
   }
-  const hashedPassword = await hashPassword(password);
+  const hashedPassword = hashPassword(password);
   data.users[username] = {
     password: hashedPassword,
     loginHistory: [],
@@ -66,13 +68,13 @@ async function saveUser(username, password) {
  * 验证用户登录
  * @param {string} username - 用户名
  * @param {string} password - 密码
- * @returns {Promise<boolean>} 是否验证通过
+ * @returns {boolean} 是否验证通过
  */
-async function validateUser(username, password) {
+function validateUser(username, password) {
   const data = getAllData();
   const user = data.users[username];
   if (!user) return false;
-  const hashedPassword = await hashPassword(password);
+  const hashedPassword = hashPassword(password);
   return user.password === hashedPassword;
 }
 

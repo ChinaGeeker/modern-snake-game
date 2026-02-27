@@ -34,7 +34,7 @@ const Auth = (() => {
     /**
      * 处理登录/注册逻辑
      */
-    function handleAuth() {
+    async function handleAuth() {
         const username = document.getElementById('username').value.trim();
         const password = document.getElementById('password').value.trim();
         const errorEl = document.getElementById('auth-error');
@@ -59,24 +59,31 @@ const Auth = (() => {
             return;
         }
 
-        if (isLoginMode) {
-            // 登录
-            if (window.Storage.validateUser(username, password)) {
-                window.Storage.addLoginRecord(username);
-                window.Storage.setCurrentUser(username);
-                onLoginSuccess(username);
+        try {
+            if (isLoginMode) {
+                // 登录
+                const isValid = await window.Storage.validateUser(username, password);
+                if (isValid) {
+                    window.Storage.addLoginRecord(username);
+                    window.Storage.setCurrentUser(username);
+                    onLoginSuccess(username);
+                } else {
+                    showError('用户名或密码错误');
+                }
             } else {
-                showError('用户名或密码错误');
+                // 注册
+                const isRegistered = await window.Storage.saveUser(username, password);
+                if (isRegistered) {
+                    window.Storage.addLoginRecord(username);
+                    window.Storage.setCurrentUser(username);
+                    onLoginSuccess(username);
+                } else {
+                    showError('该用户名已被注册');
+                }
             }
-        } else {
-            // 注册
-            if (window.Storage.saveUser(username, password)) {
-                window.Storage.addLoginRecord(username);
-                window.Storage.setCurrentUser(username);
-                onLoginSuccess(username);
-            } else {
-                showError('该用户名已被注册');
-            }
+        } catch (error) {
+            console.error('认证错误:', error);
+            showError('认证过程中发生错误，请重试');
         }
     }
 

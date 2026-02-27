@@ -29,33 +29,32 @@ function saveAllData(data) {
 }
 
 /**
- * 简单的字符串哈希（非安全级别，仅用于演示）
- * @param {string} str - 原始字符串
- * @returns {string} 哈希后的字符串
+ * 生成密码的安全哈希
+ * @param {string} password - 原始密码
+ * @returns {Promise<string>} 哈希后的密码
  */
-function simpleHash(str) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // 转为32位整数
-  }
-  return hash.toString(36);
+async function hashPassword(password) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 /**
  * 保存新用户
  * @param {string} username - 用户名
  * @param {string} password - 密码
- * @returns {boolean} 是否注册成功
+ * @returns {Promise<boolean>} 是否注册成功
  */
-function saveUser(username, password) {
+async function saveUser(username, password) {
   const data = getAllData();
   if (data.users[username]) {
     return false; // 用户已存在
   }
+  const hashedPassword = await hashPassword(password);
   data.users[username] = {
-    password: simpleHash(password),
+    password: hashedPassword,
     loginHistory: [],
     scores: []
   };
@@ -67,13 +66,14 @@ function saveUser(username, password) {
  * 验证用户登录
  * @param {string} username - 用户名
  * @param {string} password - 密码
- * @returns {boolean} 是否验证通过
+ * @returns {Promise<boolean>} 是否验证通过
  */
-function validateUser(username, password) {
+async function validateUser(username, password) {
   const data = getAllData();
   const user = data.users[username];
   if (!user) return false;
-  return user.password === simpleHash(password);
+  const hashedPassword = await hashPassword(password);
+  return user.password === hashedPassword;
 }
 
 /**

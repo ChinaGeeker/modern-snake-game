@@ -8,7 +8,7 @@ const App = (() => {
     /**
      * 应用初始化
      */
-    function init() {
+    async function init() {
         // 初始化各模块
         window.Auth.init();
         window.Game.init();
@@ -167,8 +167,8 @@ const App = (() => {
     /**
      * DOM 加载完成后初始化
      */
-    document.addEventListener('DOMContentLoaded', () => {
-        init();
+    document.addEventListener('DOMContentLoaded', async () => {
+        await init();
 
         // 绑定标签切换事件
         document.querySelectorAll('.tab-btn').forEach(btn => {

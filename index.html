@@ -85,6 +85,28 @@
         <div class="game-controls">
           <button class="btn-neon" id="start-btn">🎮 开始游戏</button>
           <button class="btn-neon" id="pause-btn" disabled>⏸️ 暂停</button>
+          <button class="btn-neon" id="settings-btn">⚙️ 设置</button>
+        </div>
+
+        <!-- 游戏设置面板 -->
+        <div id="settings-panel" class="hidden">
+          <div class="settings-title">⚙️ 游戏设置</div>
+          <div class="settings-group">
+            <label for="difficulty">难度</label>
+            <select id="difficulty">
+              <option value="easy">简单</option>
+              <option value="normal" selected>普通</option>
+              <option value="hard">困难</option>
+            </select>
+          </div>
+          <div class="settings-group">
+            <label for="sound-toggle">音效</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="sound-toggle" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <button class="btn-neon" id="save-settings-btn">💾 保存设置</button>
         </div>
 
         <!-- 历史记录区域 -->

@@ -16,9 +16,14 @@ const Game = (() => {
     let nextDirection = { x: 1, y: 0 }; // 下一帧方向（防止快速反向）
     let score = 0;              // 当前分数
     let gameState = 'idle';     // idle | playing | paused | over
-    let gameLoop = null;        // 游戏循环定时器
+    let gameLoopId = null;      // 游戏循环ID
     let speed = 150;            // 初始速度（毫秒/帧）
+    let lastTime = 0;           // 上一帧时间
     let currentUser = null;
+    let gridCache = null;       // 网格缓存
+    let soundEnabled = true;    // 音效开关
+    let sounds = {};            // 音效对象
+    let difficulty = 'normal';  // 游戏难度
 
     // ---- 颜色主题 ----
     const COLORS = {
@@ -36,6 +41,132 @@ const Game = (() => {
     let colorOffset = 0;
 
     /**
+     * 加载音效
+     */
+    function loadSounds() {
+        // 音效对象
+        sounds = {
+            eat: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-jump-coin-216.mp3'),
+            gameOver: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-failure-arcade-alert-notification-240.mp3'),
+            start: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-game-start-216.mp3'),
+            move: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-jump-coin-216.mp3')
+        };
+
+        // 预加载音效
+        Object.values(sounds).forEach(sound => {
+            sound.volume = 0.3;
+            sound.preload = 'auto';
+        });
+    }
+
+    /**
+     * 播放音效
+     * @param {string} soundName - 音效名称
+     */
+    function playSound(soundName) {
+        if (soundEnabled && sounds[soundName]) {
+            sounds[soundName].currentTime = 0;
+            sounds[soundName].play().catch(e => console.log('音效播放失败:', e));
+        }
+    }
+
+    // 触摸控制相关变量
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    /**
+     * 处理触摸开始事件
+     * @param {TouchEvent} e - 触摸事件
+     */
+    function handleTouchStart(e) {
+        const touch = e.touches[0];
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+    }
+
+    /**
+     * 处理触摸结束事件
+     * @param {TouchEvent} e - 触摸事件
+     */
+    function handleTouchEnd(e) {
+        if (gameState !== 'playing') return;
+
+        const touch = e.changedTouches[0];
+        const touchEndX = touch.clientX;
+        const touchEndY = touch.clientY;
+
+        const deltaX = touchEndX - touchStartX;
+        const deltaY = touchEndY - touchStartY;
+
+        // 确定滑动方向
+        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            // 水平滑动
+            if (deltaX > 0 && direction.x !== -1) {
+                nextDirection = { x: 1, y: 0 }; // 向右
+            } else if (deltaX < 0 && direction.x !== 1) {
+                nextDirection = { x: -1, y: 0 }; // 向左
+            }
+        } else {
+            // 垂直滑动
+            if (deltaY > 0 && direction.y !== -1) {
+                nextDirection = { x: 0, y: 1 }; // 向下
+            } else if (deltaY < 0 && direction.y !== 1) {
+                nextDirection = { x: 0, y: -1 }; // 向上
+            }
+        }
+    }
+
+    /**
+     * 根据难度设置游戏速度
+     */
+    function setSpeedByDifficulty() {
+        switch (difficulty) {
+            case 'easy':
+                speed = 200;
+                break;
+            case 'normal':
+                speed = 150;
+                break;
+            case 'hard':
+                speed = 100;
+                break;
+        }
+    }
+
+    /**
+     * 初始化设置面板
+     */
+    function initSettings() {
+        const settingsBtn = document.getElementById('settings-btn');
+        const settingsPanel = document.getElementById('settings-panel');
+        const saveSettingsBtn = document.getElementById('save-settings-btn');
+        const difficultySelect = document.getElementById('difficulty');
+        const soundToggle = document.getElementById('sound-toggle');
+
+        // 绑定设置按钮点击事件
+        settingsBtn.addEventListener('click', () => {
+            settingsPanel.classList.toggle('hidden');
+        });
+
+        // 绑定保存设置按钮点击事件
+        saveSettingsBtn.addEventListener('click', () => {
+            // 保存难度设置
+            difficulty = difficultySelect.value;
+            setSpeedByDifficulty();
+
+            // 保存音效设置
+            soundEnabled = soundToggle.checked;
+
+            // 隐藏设置面板
+            settingsPanel.classList.add('hidden');
+        });
+
+        // 初始化设置值
+        difficultySelect.value = difficulty;
+        soundToggle.checked = soundEnabled;
+    }
+
+    /**
      * 初始化游戏模块
      */
     function init() {
@@ -44,12 +175,22 @@ const Game = (() => {
         canvas.width = CANVAS_SIZE;
         canvas.height = CANVAS_SIZE;
 
+        // 加载音效
+        loadSounds();
+
         // 绑定键盘事件
         document.addEventListener('keydown', handleKeyDown);
+
+        // 绑定触摸事件
+        canvas.addEventListener('touchstart', handleTouchStart);
+        canvas.addEventListener('touchend', handleTouchEnd);
 
         // 绑定按钮事件
         document.getElementById('start-btn').addEventListener('click', startGame);
         document.getElementById('pause-btn').addEventListener('click', togglePause);
+
+        // 初始化设置面板
+        initSettings();
 
         // 初始绘制
         drawEmptyBoard();
@@ -103,6 +244,23 @@ const Game = (() => {
     }
 
     /**
+     * 游戏循环函数（使用 requestAnimationFrame）
+     */
+    function gameLoop(timestamp) {
+        if (!lastTime) lastTime = timestamp;
+        const deltaTime = timestamp - lastTime;
+
+        if (deltaTime >= speed) {
+            gameStep();
+            lastTime = timestamp;
+        }
+
+        if (gameState === 'playing') {
+            gameLoopId = requestAnimationFrame(gameLoop);
+        }
+    }
+
+    /**
      * 开始游戏
      */
     function startGame() {
@@ -115,8 +273,10 @@ const Game = (() => {
         direction = { x: 1, y: 0 };
         nextDirection = { x: 1, y: 0 };
         score = 0;
-        speed = 150;
+        // 根据难度设置速度
+        setSpeedByDifficulty();
         gameState = 'playing';
+        lastTime = 0;
 
         spawnFood();
         updateScoreDisplay();
@@ -126,9 +286,14 @@ const Game = (() => {
         document.getElementById('pause-btn').disabled = false;
         document.getElementById('pause-btn').textContent = '⏸️ 暂停';
 
+        // 播放开始音效
+        playSound('start');
+
         // 启动游戏循环
-        clearInterval(gameLoop);
-        gameLoop = setInterval(gameStep, speed);
+        if (gameLoopId) {
+            cancelAnimationFrame(gameLoopId);
+        }
+        gameLoopId = requestAnimationFrame(gameLoop);
     }
 
     /**
@@ -137,12 +302,16 @@ const Game = (() => {
     function togglePause() {
         if (gameState === 'playing') {
             gameState = 'paused';
-            clearInterval(gameLoop);
+            if (gameLoopId) {
+                cancelAnimationFrame(gameLoopId);
+                gameLoopId = null;
+            }
             document.getElementById('pause-btn').textContent = '▶️ 继续';
             drawPauseOverlay();
         } else if (gameState === 'paused') {
             gameState = 'playing';
-            gameLoop = setInterval(gameStep, speed);
+            lastTime = 0;
+            gameLoopId = requestAnimationFrame(gameLoop);
             document.getElementById('pause-btn').textContent = '⏸️ 暂停';
         }
     }
@@ -181,12 +350,13 @@ const Game = (() => {
             score += 10;
             updateScoreDisplay();
             spawnFood();
+            
+            // 播放吃食物音效
+            playSound('eat');
 
             // 加速（每吃5个食物加速一次，最低60ms）
             if (score % 50 === 0 && speed > 60) {
                 speed -= 10;
-                clearInterval(gameLoop);
-                gameLoop = setInterval(gameStep, speed);
             }
         } else {
             // 没吃到食物，去掉尾巴
@@ -219,7 +389,13 @@ const Game = (() => {
      */
     function gameOver() {
         gameState = 'over';
-        clearInterval(gameLoop);
+        if (gameLoopId) {
+            cancelAnimationFrame(gameLoopId);
+            gameLoopId = null;
+        }
+
+        // 播放游戏结束音效
+        playSound('gameOver');
 
         // 保存分数
         if (currentUser && score > 0) {
@@ -243,8 +419,11 @@ const Game = (() => {
      * 主绘制函数
      */
     function draw() {
-        // 更新色相偏移，让彩虹颜色流动（每帧偏移 2°）
-        colorOffset = (colorOffset + 2) % 360;
+        // 只在游戏状态为 playing 时更新颜色偏移
+        if (gameState === 'playing') {
+            // 更新色相偏移，让彩虹颜色流动（每帧偏移 2°）
+            colorOffset = (colorOffset + 2) % 360;
+        }
 
         // 清空画布
         ctx.fillStyle = COLORS.bg;
@@ -282,20 +461,30 @@ const Game = (() => {
      * 绘制网格
      */
     function drawGrid() {
-        ctx.strokeStyle = COLORS.grid;
-        ctx.lineWidth = 0.5;
-        for (let i = 0; i <= GRID_COUNT; i++) {
-            // 竖线
-            ctx.beginPath();
-            ctx.moveTo(i * GRID_SIZE, 0);
-            ctx.lineTo(i * GRID_SIZE, CANVAS_SIZE);
-            ctx.stroke();
-            // 横线
-            ctx.beginPath();
-            ctx.moveTo(0, i * GRID_SIZE);
-            ctx.lineTo(CANVAS_SIZE, i * GRID_SIZE);
-            ctx.stroke();
+        if (!gridCache) {
+            // 创建离屏 Canvas 缓存网格
+            gridCache = document.createElement('canvas');
+            gridCache.width = CANVAS_SIZE;
+            gridCache.height = CANVAS_SIZE;
+            const gridCtx = gridCache.getContext('2d');
+            
+            gridCtx.strokeStyle = COLORS.grid;
+            gridCtx.lineWidth = 0.5;
+            for (let i = 0; i <= GRID_COUNT; i++) {
+                // 竖线
+                gridCtx.beginPath();
+                gridCtx.moveTo(i * GRID_SIZE, 0);
+                gridCtx.lineTo(i * GRID_SIZE, CANVAS_SIZE);
+                gridCtx.stroke();
+                // 横线
+                gridCtx.beginPath();
+                gridCtx.moveTo(0, i * GRID_SIZE);
+                gridCtx.lineTo(CANVAS_SIZE, i * GRID_SIZE);
+                gridCtx.stroke();
+            }
         }
+        // 绘制缓存的网格
+        ctx.drawImage(gridCache, 0, 0);
     }
 
     /**
@@ -329,6 +518,7 @@ const Game = (() => {
             const size = GRID_SIZE - 2;
             const radius = i === 0 ? 6 : 4;
 
+            // 使用路径缓存，减少重复计算
             ctx.beginPath();
             ctx.moveTo(x + radius, y);
             ctx.lineTo(x + size - radius, y);
@@ -499,7 +689,10 @@ const Game = (() => {
      * 重置游戏状态（退出登录时调用）
      */
     function reset() {
-        clearInterval(gameLoop);
+        if (gameLoopId) {
+            cancelAnimationFrame(gameLoopId);
+            gameLoopId = null;
+        }
         gameState = 'idle';
         score = 0;
         currentUser = null;

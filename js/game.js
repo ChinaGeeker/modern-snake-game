@@ -79,6 +79,7 @@ const Game = (() => {
      * @param {TouchEvent} e - 触摸事件
      */
     function handleTouchStart(e) {
+        e.preventDefault(); // 阻止默认滚动行为
         const touch = e.touches[0];
         touchStartX = touch.clientX;
         touchStartY = touch.clientY;
@@ -89,6 +90,7 @@ const Game = (() => {
      * @param {TouchEvent} e - 触摸事件
      */
     function handleTouchEnd(e) {
+        e.preventDefault(); // 阻止默认滚动行为
         if (gameState !== 'playing') return;
 
         const touch = e.changedTouches[0];
